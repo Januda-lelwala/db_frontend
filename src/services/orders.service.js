@@ -8,7 +8,6 @@ import api from './api';
 export const ordersService = {
   /**
    * Get all orders (admin only)
-   * @param {Object} params - Query parameters (e.g., status, date)
    */
   getAll: async (params = {}) => {
     const response = await api.get('/orders', { params });
@@ -17,7 +16,6 @@ export const ordersService = {
 
   /**
    * Get order by ID (authenticated)
-   * @param {string} id - Order ID
    */
   getById: async (id) => {
     const response = await api.get(`/orders/${id}`);
@@ -26,7 +24,6 @@ export const ordersService = {
 
   /**
    * Create new order (authenticated)
-   * @param {Object} orderData - Order data
    */
   create: async (orderData) => {
     const response = await api.post('/orders', orderData);
@@ -35,8 +32,6 @@ export const ordersService = {
 
   /**
    * Update order (authenticated)
-   * @param {string} id - Order ID
-   * @param {Object} orderData - Updated order data
    */
   update: async (id, orderData) => {
     const response = await api.put(`/orders/${id}`, orderData);
@@ -45,7 +40,6 @@ export const ordersService = {
 
   /**
    * Delete order (admin only)
-   * @param {string} id - Order ID
    */
   delete: async (id) => {
     const response = await api.delete(`/orders/${id}`);
@@ -54,7 +48,6 @@ export const ordersService = {
 
   /**
    * Get order items (authenticated)
-   * @param {string} id - Order ID
    */
   getItems: async (id) => {
     const response = await api.get(`/orders/${id}/items`);
@@ -63,8 +56,6 @@ export const ordersService = {
 
   /**
    * Update order status (admin only)
-   * @param {string} id - Order ID
-   * @param {Object} statusData - Status update data (e.g., { status: 'shipped' })
    */
   updateStatus: async (id, statusData) => {
     const response = await api.patch(`/orders/${id}/status`, statusData);

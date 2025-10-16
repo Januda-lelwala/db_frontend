@@ -6,10 +6,10 @@ import api from './api';
  */
 
 export const storesService = {
-  // ============ Public Endpoints ============
+  // ===== Public Endpoints =====
+
   /**
-   * Get all stores (public)
-   * @param {Object} params - Query parameters
+   * Get all stores
    */
   getAll: async (params = {}) => {
     const response = await api.get('/stores', { params });
@@ -17,7 +17,7 @@ export const storesService = {
   },
 
   /**
-   * Get available cities (public)
+   * Get available cities
    */
   getCities: async () => {
     const response = await api.get('/stores/cities');
@@ -25,17 +25,15 @@ export const storesService = {
   },
 
   /**
-   * Search stores by city (public)
-   * @param {Object} params - Search parameters (e.g., city)
+   * Search stores by city
    */
-  search: async (params) => {
+  search: async (params = {}) => {
     const response = await api.get('/stores/search', { params });
     return response.data;
   },
 
   /**
-   * Get store by ID (public)
-   * @param {string} id - Store ID
+   * Get store by ID
    */
   getById: async (id) => {
     const response = await api.get(`/stores/${id}`);
@@ -43,19 +41,17 @@ export const storesService = {
   },
 
   /**
-   * Get store products (public)
-   * @param {string} id - Store ID
-   * @param {Object} params - Query parameters
+   * Get store products
    */
   getProducts: async (id, params = {}) => {
     const response = await api.get(`/stores/${id}/products`, { params });
     return response.data;
   },
 
-  // ============ Admin Endpoints ============
+  // ===== Admin Endpoints =====
+
   /**
    * Create new store (admin only)
-   * @param {Object} storeData - Store data
    */
   create: async (storeData) => {
     const response = await api.post('/stores', storeData);
@@ -64,8 +60,6 @@ export const storesService = {
 
   /**
    * Update store (admin only)
-   * @param {string} id - Store ID
-   * @param {Object} storeData - Updated store data
    */
   update: async (id, storeData) => {
     const response = await api.put(`/stores/${id}`, storeData);
@@ -74,7 +68,6 @@ export const storesService = {
 
   /**
    * Delete store (admin only)
-   * @param {string} id - Store ID
    */
   delete: async (id) => {
     const response = await api.delete(`/stores/${id}`);
@@ -83,17 +76,14 @@ export const storesService = {
 
   /**
    * Get store inventory (admin only)
-   * @param {string} id - Store ID
    */
-  getInventory: async (id) => {
-    const response = await api.get(`/stores/${id}/inventory`);
+  getInventory: async (id, params = {}) => {
+    const response = await api.get(`/stores/${id}/inventory`, { params });
     return response.data;
   },
 
   /**
    * Update store inventory (admin only)
-   * @param {string} id - Store ID
-   * @param {Object} inventoryData - Inventory data
    */
   updateInventory: async (id, inventoryData) => {
     const response = await api.patch(`/stores/${id}/inventory`, inventoryData);
@@ -102,8 +92,6 @@ export const storesService = {
 
   /**
    * Get store orders (admin only)
-   * @param {string} id - Store ID
-   * @param {Object} params - Query parameters
    */
   getOrders: async (id, params = {}) => {
     const response = await api.get(`/stores/${id}/orders`, { params });

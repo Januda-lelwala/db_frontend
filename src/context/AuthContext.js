@@ -1,26 +1,23 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { authService } from '../services/auth.service';
-import { handleAPIError } from '../services/api';
-import { STORAGE_KEYS } from '../config/constants';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { authAPI, handleAPIError } from '../services/api';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(null); // { id, name, role: 'customer'|'admin'|'driver'|'assistant', portalType: 'customer'|'employee' }
   const [loading, setLoading] = useState(true);
 
-  // Initialize auth on mount
   useEffect(() => {
     const initAuth = async () => {
-      const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+      const token = localStorage.getItem('authToken');
       if (token) {
         try {
-          const response = await authService.verify();
-          setUser(response.user);
+          const response = await authAPI.verify();
+          setUser(response.data.user);
         } catch (error) {
           console.error('Token verification failed:', error);
-          localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-          localStorage.removeItem(STORAGE_KEYS.USER_DATA);
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('user');
         }
       }
       setLoading(false);
@@ -29,81 +26,61 @@ export const AuthProvider = ({ children }) => {
     initAuth();
   }, []);
 
-  /**
-   * Login user
-   */
   const login = async (username, password, role, portalType = 'auto') => {
     try {
-      const response = await authService.login({ 
-        username, 
-        password, 
-        role, 
-        portalType 
-      });
+      const response = await authAPI.login({ username, password, role, portalType });
+      const { user: userData, token } = response.data;
       
-      const { user: userData, token } = response;
-      
-      // Determine portal type
+      // Determine portal type based on role if not specified
       const finalPortalType = portalType === 'auto' 
         ? (userData.role === 'customer' ? 'customer' : 'employee')
         : portalType;
       
       const userWithPortal = { ...userData, portalType: finalPortalType };
       
-      // Store in localStorage
-      localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
-      localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(userWithPortal));
-      
+      localStorage.setItem('authToken', token);
+      localStorage.setItem('user', JSON.stringify(userWithPortal));
       setUser(userWithPortal);
+      
       return userWithPortal;
     } catch (error) {
       throw new Error(handleAPIError(error));
     }
   };
 
-  /**
-   * Register new customer
-   */
-  const register = async (userData) => {
+  const register = async (userData, portalType = 'customer') => {
     try {
-      const response = await authService.register(userData);
-      const { user: newUser, token } = response;
+      const response = await authAPI.register(userData);
+      const { user: newUser, token } = response.data;
       
-      const userWithPortal = { 
-        ...newUser, 
-        role: 'customer', 
-        portalType: 'customer' 
-      };
+      const userWithPortal = { ...newUser, role: 'customer', portalType: 'customer' };
       
-      localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
-      localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(userWithPortal));
-      
+      localStorage.setItem('authToken', token);
+      localStorage.setItem('user', JSON.stringify(userWithPortal));
       setUser(userWithPortal);
+      
       return userWithPortal;
     } catch (error) {
       throw new Error(handleAPIError(error));
     }
   };
 
-  /**
-   * Logout user
-   */
   const logout = async () => {
     try {
-      await authService.logout();
+      await authAPI.logout();
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-      localStorage.removeItem(STORAGE_KEYS.USER_DATA);
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
       setUser(null);
     }
   };
 
-  const value = {
-    user,
-    loading,
-    login,
+  const value = useMemo(() => ({ 
+    user, 
+    loading, 
+    login, 
     register,
     logout,
     isAuthenticated: !!user,
@@ -113,15 +90,9 @@ export const AuthProvider = ({ children }) => {
     isAssistant: user?.role === 'assistant',
     isEmployee: user?.portalType === 'employee',
     portalType: user?.portalType || null
-  };
+  }), [user, loading]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+export const useAuth = () => useContext(AuthContext);

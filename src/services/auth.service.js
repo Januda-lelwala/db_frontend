@@ -6,9 +6,9 @@ import api from './api';
  */
 
 export const authService = {
-  // ============ User Authentication ============
+  // ===== User Authentication =====
   /**
-   * Register a new user
+   * Register a new customer
    */
   register: async (userData) => {
     const response = await api.post('/auth/register', userData);
@@ -16,7 +16,7 @@ export const authService = {
   },
 
   /**
-   * Login user
+   * Login customer/user
    */
   login: async (credentials) => {
     const response = await api.post('/auth/login', credentials);
@@ -31,74 +31,78 @@ export const authService = {
     return response.data;
   },
 
-  // ============ Admin Authentication ============
-  /**
-   * Register a new admin (admin only)
-   */
-  adminRegister: async (adminData) => {
-    const response = await api.post('/auth/admin/register', adminData);
-    return response.data;
+  // ===== Admin Authentication =====
+  admin: {
+    /**
+     * Register new admin (admin only)
+     */
+    register: async (adminData) => {
+      const response = await api.post('/auth/admin/register', adminData);
+      return response.data;
+    },
+
+    /**
+     * Admin login
+     */
+    login: async (credentials) => {
+      const response = await api.post('/auth/admin/login', credentials);
+      return response.data;
+    },
+
+    /**
+     * Get admin profile (admin only)
+     */
+    getProfile: async () => {
+      const response = await api.get('/auth/admin/profile');
+      return response.data;
+    }
   },
 
-  /**
-   * Admin login
-   */
-  adminLogin: async (credentials) => {
-    const response = await api.post('/auth/admin/login', credentials);
-    return response.data;
+  // ===== Driver Authentication =====
+  driver: {
+    /**
+     * Register new driver
+     */
+    register: async (driverData) => {
+      const response = await api.post('/auth/driver/register', driverData);
+      return response.data;
+    },
+
+    /**
+     * Driver login
+     */
+    login: async (credentials) => {
+      const response = await api.post('/auth/driver/login', credentials);
+      return response.data;
+    }
   },
 
-  /**
-   * Get admin profile (admin only)
-   */
-  getAdminProfile: async () => {
-    const response = await api.get('/auth/admin/profile');
-    return response.data;
+  // ===== Assistant Authentication =====
+  assistant: {
+    /**
+     * Register new assistant
+     */
+    register: async (assistantData) => {
+      const response = await api.post('/auth/assistant/register', assistantData);
+      return response.data;
+    },
+
+    /**
+     * Assistant login
+     */
+    login: async (credentials) => {
+      const response = await api.post('/auth/assistant/login', credentials);
+      return response.data;
+    }
   },
 
-  // ============ Driver Authentication ============
-  /**
-   * Register a new driver
-   */
-  driverRegister: async (driverData) => {
-    const response = await api.post('/auth/driver/register', driverData);
-    return response.data;
-  },
-
-  /**
-   * Driver login
-   */
-  driverLogin: async (credentials) => {
-    const response = await api.post('/auth/driver/login', credentials);
-    return response.data;
-  },
-
-  // ============ Assistant Authentication ============
-  /**
-   * Register a new assistant
-   */
-  assistantRegister: async (assistantData) => {
-    const response = await api.post('/auth/assistant/register', assistantData);
-    return response.data;
-  },
-
-  /**
-   * Assistant login
-   */
-  assistantLogin: async (credentials) => {
-    const response = await api.post('/auth/assistant/login', credentials);
-    return response.data;
-  },
-
-  // ============ Common Operations ============
+  // ===== Common Actions =====
   /**
    * Logout user
    */
-  logout: async () => {
-    try {
-      await api.post('/auth/logout');
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
+  logout: () => {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('user');
+    return Promise.resolve();
   }
 };

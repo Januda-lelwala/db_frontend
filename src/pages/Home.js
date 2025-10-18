@@ -1344,7 +1344,8 @@ export default function Home() {
           {/* Right Section - Action Buttons */}
           <div style={styles.navRight}>
             <div style={styles.topNavActions}>
-              <Link to="/login" className="top-nav-login" style={styles.topNavLogin}>Login</Link>
+             
+              <Link to="/login/employee" className="top-nav-login" style={{...styles.topNavLogin, marginLeft: '0.5rem'}}>Employee Portal</Link>
               <Link to="/signup" className="top-nav-cta" style={styles.topNavCta}>Get Started</Link>
             </div>
           </div>
@@ -1448,8 +1449,19 @@ export default function Home() {
                   <div className="hover-lift hover-glow shimmer border-glow border-rainbow" style={styles.primaryAction}>
                     <span className="bounce-in" style={styles.actionIcon}>🔐</span>
                     <div style={styles.actionContent}>
-                      <span style={styles.actionTitle}>Sign In</span>
+                      <span style={styles.actionTitle}>Customer Login</span>
                       <span style={styles.actionDesc}>Access your account</span>
+                    </div>
+                    <span className="hover-pulse" style={styles.actionArrow}>→</span>
+                  </div>
+                </Link>
+
+                <Link to="/login/employee" style={styles.actionLink}>
+                  <div className="hover-lift border-pulse border-rainbow" style={styles.secondaryAction}>
+                    <span className="bounce-in" style={styles.actionIcon}>👨‍💼</span>
+                    <div style={styles.actionContent}>
+                      <span style={styles.actionTitle}>Employee Portal</span>
+                      <span style={styles.actionDesc}>Admin, Driver, Assistant</span>
                     </div>
                     <span className="hover-pulse" style={styles.actionArrow}>→</span>
                   </div>
@@ -1504,7 +1516,8 @@ export default function Home() {
           </div>
           <div style={styles.footerSection}>
             <h4 style={styles.footerTitle}>Account</h4>
-            <Link to="/login" style={styles.footerLink}>Sign In</Link>
+            <Link to="/login" style={styles.footerLink}>Customer Login</Link>
+            <Link to="/login/employee" style={styles.footerLink}>Employee Portal</Link>
             <Link to="/signup" style={styles.footerLink}>Sign Up</Link>
             {isAuthenticated && (
               <Link to={user?.role === 'customer' ? '/customer' : '/employee'} style={styles.footerLink}>

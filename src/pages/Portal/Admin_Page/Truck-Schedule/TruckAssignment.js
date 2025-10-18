@@ -14,13 +14,52 @@ export default function TruckAssignment() {
 
   useEffect(() => {
     (async () => {
-      try { const r = await fetch("http://localhost:5000/api/admin/truck-routes", { headers: tokenHeader }); if (r.ok) setRoutes(await r.json()); } catch {}
+      // Helper function to extract array from various response formats
+      const extractArray = (data, key) => {
+        if (Array.isArray(data)) return data;
+        if (data.data) {
+          if (Array.isArray(data.data)) return data.data;
+          if (data.data[key]) return data.data[key];
+          return Object.values(data.data);
+        }
+        if (data[key]) return data[key];
+        return [];
+      };
+      
+      try { 
+        const r = await fetch("http://localhost:3000/api/truck-routes", { headers: tokenHeader }); 
+        if (r.ok) {
+          const data = await r.json();
+          setRoutes(extractArray(data, 'routes'));
+        }
+      } catch {}
       if (!routes.length) setRoutes([{ route_id:"TR_COL_01", route_name:"Colombo City North" }]);
-      try { const r = await fetch("http://localhost:5000/api/admin/trucks", { headers: tokenHeader }); if (r.ok) setTrucks(await r.json()); } catch {}
+      
+      try { 
+        const r = await fetch("http://localhost:3000/api/trucks", { headers: tokenHeader }); 
+        if (r.ok) {
+          const data = await r.json();
+          setTrucks(extractArray(data, 'trucks'));
+        }
+      } catch {}
       if (!trucks.length) setTrucks([{ truck_id:"TK01", license_plate:"WP-1234", capacity:60 }]);
-      try { const r = await fetch("http://localhost:5000/api/admin/drivers", { headers: tokenHeader }); if (r.ok) setDrivers(await r.json()); } catch {}
+      
+      try { 
+        const r = await fetch("http://localhost:3000/api/drivers", { headers: tokenHeader }); 
+        if (r.ok) {
+          const data = await r.json();
+          setDrivers(extractArray(data, 'drivers'));
+        }
+      } catch {}
       if (!drivers.length) setDrivers([{ driver_id:"DRV001", name:"John Driver" }]);
-      try { const r = await fetch("http://localhost:5000/api/admin/assistants", { headers: tokenHeader }); if (r.ok) setAssistants(await r.json()); } catch {}
+      
+      try { 
+        const r = await fetch("http://localhost:3000/api/assistants", { headers: tokenHeader }); 
+        if (r.ok) {
+          const data = await r.json();
+          setAssistants(extractArray(data, 'assistants'));
+        }
+      } catch {}
       if (!assistants.length) setAssistants([{ assistant_id:"AST001", name:"Sarah Support" }]);
     })();
     // eslint-disable-next-line
@@ -29,7 +68,7 @@ export default function TruckAssignment() {
   const check = async (role, id, start, end) => {
     if (!id || !start || !end) return;
     try {
-      const r = await fetch(`http://localhost:5000/api/admin/availability?type=${role}&id=${encodeURIComponent(id)}&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`);
+      const r = await fetch(`http://localhost:3000/api/availability?type=${role}&id=${encodeURIComponent(id)}&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`);
       if (r.ok) {
         const d = await r.json();
         return setAvailability(s=>({ ...s, [role]: d?.available ? "Available" : "Busy" }));
@@ -45,7 +84,7 @@ export default function TruckAssignment() {
     if (!route_id || !truck_id || !driver_id || !assistant_id || !start_time || !end_time) return alert("Fill all fields");
     setBusy(true);
     try {
-      const r = await fetch("http://localhost:5000/api/admin/truck-schedule", {
+      const r = await fetch("http://localhost:3000/api/truck-schedule", {
         method:"POST", headers:{ "Content-Type":"application/json", ...tokenHeader },
         body: JSON.stringify({ truck_schedule_id: crypto.randomUUID?.() || `TS_${Date.now()}`, ...form })
       });

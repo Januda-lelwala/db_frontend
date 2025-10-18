@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "./trainallocation.css";
 
-const tokenHeader = { Authorization: `Bearer ${localStorage.getItem("authToken") || "demo"}` };
+const tokenHeader = { Authorization: `Bearer ${localStorage.getItem("authToken")}` };
 
 export default function TrainAllocation({ onGoTruckAssignment }) {
   const [orders, setOrders] = useState([]);
@@ -12,7 +12,32 @@ export default function TrainAllocation({ onGoTruckAssignment }) {
 
   useEffect(() => {
     (async () => {
-      try { const r = await fetch("http://localhost:5000/api/admin/orders?status=confirmed", { headers: tokenHeader }); if (r.ok) return setOrders(await r.json()); } catch {}
+      try { 
+        const r = await fetch("http://localhost:3000/api/orders?status=confirmed", { headers: tokenHeader }); 
+        if (r.ok) {
+          const data = await r.json();
+          
+          // Handle multiple response formats
+          let ordersArray = [];
+          
+          if (Array.isArray(data)) {
+            ordersArray = data;
+          } else if (data.data) {
+            if (Array.isArray(data.data)) {
+              ordersArray = data.data;
+            } else if (data.data.orders) {
+              ordersArray = data.data.orders;
+            } else {
+              ordersArray = Object.values(data.data);
+            }
+          } else if (data.orders) {
+            ordersArray = data.orders;
+          }
+          
+          setOrders(ordersArray);
+          return;
+        }
+      } catch {}
       setOrders([{ order_id:"ORD001", destination_city:"Colombo", customer_name:"John", required_space:12.5, order_date:"2025-10-02" }]);
     })();
   }, []);
@@ -20,8 +45,30 @@ export default function TrainAllocation({ onGoTruckAssignment }) {
   const loadTrips = async (order) => {
     setSelectedOrder(order); setSelectedTrip(null);
     try {
-      const r = await fetch(`http://localhost:5000/api/admin/train-trips?city=${encodeURIComponent(order.destination_city)}`, { headers: tokenHeader });
-      if (r.ok) return setTrips(await r.json());
+      const r = await fetch(`http://localhost:3000/api/train-trips?city=${encodeURIComponent(order.destination_city)}`, { headers: tokenHeader });
+      if (r.ok) {
+        const data = await r.json();
+        
+        // Handle multiple response formats
+        let tripsArray = [];
+        
+        if (Array.isArray(data)) {
+          tripsArray = data;
+        } else if (data.data) {
+          if (Array.isArray(data.data)) {
+            tripsArray = data.data;
+          } else if (data.data.trips) {
+            tripsArray = data.data.trips;
+          } else {
+            tripsArray = Object.values(data.data);
+          }
+        } else if (data.trips) {
+          tripsArray = data.trips;
+        }
+        
+        setTrips(tripsArray);
+        return;
+      }
     } catch {}
     setTrips([{ trip_id:"TT001", train_id:"TR100", route_id:"R_KAN_COL", depart_time:new Date(Date.now()+8*86400000).toISOString(), arrive_time:new Date(Date.now()+8*86400000+6*3600000).toISOString(), capacity:200, capacity_used:40 }]);
   };
@@ -30,7 +77,7 @@ export default function TrainAllocation({ onGoTruckAssignment }) {
     if (!selectedOrder || !selectedTrip) return;
     setBusy(true);
     try {
-      const r = await fetch(`http://localhost:5000/api/admin/orders/${encodeURIComponent(selectedOrder.order_id)}/schedule-trains`, {
+      const r = await fetch(`http://localhost:3000/api/orders/${encodeURIComponent(selectedOrder.order_id)}/schedule-trains`, {
         method:"POST", headers:{ "Content-Type":"application/json", ...tokenHeader },
         body: JSON.stringify({ route_id:selectedTrip.route_id, store_id:selectedTrip.store_id })
       });

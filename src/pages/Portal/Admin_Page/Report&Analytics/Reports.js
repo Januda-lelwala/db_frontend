@@ -17,14 +17,14 @@ export default function Reports() {
   const run = async (name) => {
     setTitle(name); setOpen(true); setRows(null);
     const endpoint = {
-      "Quarterly Sales": "/api/admin/reports/quarterly-sales",
-      "Train Utilization": "/api/admin/reports/train-utilization",
-      "Truck Performance": "/api/admin/reports/truck-usage",
-      "Worker Hours": "/api/admin/reports/worker-hours",
-      "City-wise Sales": "/api/admin/reports/city-route-sales",
-      "Top Products": "/api/admin/reports/quarter-top-items",
+      "Quarterly Sales": "/api/reports/quarterly-sales",
+      "Train Utilization": "/api/reports/train-utilization",
+      "Truck Performance": "/api/reports/truck-usage",
+      "Worker Hours": "/api/reports/worker-hours",
+      "City-wise Sales": "/api/reports/city-route-sales",
+      "Top Products": "/api/reports/quarter-top-items",
     }[name];
-    try { if (endpoint) { const r = await fetch(`http://localhost:5000${endpoint}`, { headers: tokenHeader }); if (r.ok) return setRows(await r.json()); } } catch {}
+    try { if (endpoint) { const r = await fetch(`http://localhost:3000${endpoint}`, { headers: tokenHeader }); if (r.ok) return setRows(await r.json()); } } catch {}
     const demo = {
       "Quarterly Sales":[{quarter:"2025-Q3", total_value:1250000, total_space_units:420, orders:118}],
       "Train Utilization":[{trip_id:"TT001", train_id:"TR100", route:"Kandy→Colombo", capacity:200, used:160, utilization:"80%"}],

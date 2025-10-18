@@ -119,7 +119,7 @@ const AdminDashboard = () => {
 
   /** Initial load */
   useEffect(() => {
-    // Pending orders (real: GET /api/admin/orders?status=confirmed or scheduled-needed)
+    // Pending orders (real: GET /api/orders?status=confirmed or scheduled-needed)
     setPendingOrders([
       {
         order_id: "ORD001",
@@ -139,7 +139,7 @@ const AdminDashboard = () => {
       },
     ]);
 
-    // System stats (real: GET /api/admin/system-stats)
+    // System stats (real: GET /api/system-stats)
     setSystemStats({
       totalPendingOrders: 15,
       totalTrains: 2,
@@ -149,14 +149,14 @@ const AdminDashboard = () => {
       totalCapacityUtilization: 67,
     });
 
-    // Products (real: GET /api/admin/products)
+    // Products (real: GET /api/products)
     setProducts([
       { product_id: "P001", name: "Detergent Box", price: 600, space_consumption: 0.5, category: "FMCG", available_quantity: 200 },
       { product_id: "P002", name: "Shampoo Pack", price: 450, space_consumption: 0.2, category: "FMCG", available_quantity: 300 },
       { product_id: "P003", name: "Soap Carton", price: 1200, space_consumption: 1.0, category: "FMCG", available_quantity: 150 },
     ]);
 
-    // Route options (real: GET /api/admin/truck-routes)
+    // Route options (real: GET /api/truck-routes)
     setRouteOptions([
       { route_id: "TR_COL_01", route_name: "Colombo City North" },
       { route_id: "TR_COL_02", route_name: "Colombo City South" },
@@ -165,19 +165,19 @@ const AdminDashboard = () => {
 
     // Try to preload resource lists (real: GETs)
     (async () => {
-      try { const r = await fetch("http://localhost:5000/api/admin/drivers", { headers: tokenHeader }); if (r.ok) setDrivers(await r.json()); } catch {}
-      try { const r = await fetch("http://localhost:5000/api/admin/assistants", { headers: tokenHeader }); if (r.ok) setAssistants(await r.json()); } catch {}
-      try { const r = await fetch("http://localhost:5000/api/admin/trucks", { headers: tokenHeader }); if (r.ok) setTrucks(await r.json()); } catch {}
-      try { const r = await fetch("http://localhost:5000/api/admin/trains", { headers: tokenHeader }); if (r.ok) setTrains(await r.json()); } catch {}
+      try { const r = await fetch("http://localhost:3000/api/drivers", { headers: tokenHeader }); if (r.ok) setDrivers(await r.json()); } catch {}
+      try { const r = await fetch("http://localhost:3000/api/assistants", { headers: tokenHeader }); if (r.ok) setAssistants(await r.json()); } catch {}
+      try { const r = await fetch("http://localhost:3000/api/trucks", { headers: tokenHeader }); if (r.ok) setTrucks(await r.json()); } catch {}
+      try { const r = await fetch("http://localhost:3000/api/trains", { headers: tokenHeader }); if (r.ok) setTrains(await r.json()); } catch {}
     })();
   }, []); // eslint-disable-line
 
   /** Fetch helpers used by Allocation Wizard */
   const fetchAvailableTrainTrips = async (order) => {
     try {
-      // Real API: GET /api/admin/train-trips?destination=...&from=now
+      // Real API: GET /api/train-trips?destination=...&from=now
       const res = await fetch(
-        `http://localhost:5000/api/admin/train-trips?city=${encodeURIComponent(order.destination_city)}`,
+        `http://localhost:3000/api/train-trips?city=${encodeURIComponent(order.destination_city)}`,
         { headers: tokenHeader }
       );
       if (res.ok) {
@@ -214,9 +214,9 @@ const AdminDashboard = () => {
   const fetchTruckDriverAssistant = async () => {
     try {
       const [trucksRes, driversRes, assistantsRes] = await Promise.all([
-        fetch("http://localhost:5000/api/admin/trucks", { headers: tokenHeader }),
-        fetch("http://localhost:5000/api/admin/drivers", { headers: tokenHeader }),
-        fetch("http://localhost:5000/api/admin/assistants", { headers: tokenHeader }),
+        fetch("http://localhost:3000/api/trucks", { headers: tokenHeader }),
+        fetch("http://localhost:3000/api/drivers", { headers: tokenHeader }),
+        fetch("http://localhost:3000/api/assistants", { headers: tokenHeader }),
       ]);
 
       if (trucksRes.ok) {
@@ -251,9 +251,9 @@ const AdminDashboard = () => {
   const checkAvailability = async (role, id, start, end) => {
     if (!start || !end) return;
     try {
-      // Real API: GET /api/admin/availability?type=driver|assistant&id=...&start=...&end=...
+      // Real API: GET /api/availability?type=driver|assistant&id=...&start=...&end=...
       const res = await fetch(
-        `http://localhost:5000/api/admin/availability?type=${role}&id=${encodeURIComponent(id)}&start=${encodeURIComponent(
+        `http://localhost:3000/api/availability?type=${role}&id=${encodeURIComponent(id)}&start=${encodeURIComponent(
           start
         )}&end=${encodeURIComponent(end)}`
       );
@@ -288,7 +288,7 @@ const AdminDashboard = () => {
     try {
       // Real API that internally calls sp_schedule_order_to_trains
       const res = await fetch(
-        `http://localhost:5000/api/admin/orders/${encodeURIComponent(allocOrder.order_id)}/schedule-trains`,
+        `http://localhost:3000/api/orders/${encodeURIComponent(allocOrder.order_id)}/schedule-trains`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json", ...tokenHeader },
@@ -317,7 +317,7 @@ const AdminDashboard = () => {
     setBusy(true);
     try {
       // Real API that calls sp_create_truck_schedule
-      const res = await fetch("http://localhost:5000/api/admin/truck-schedule", {
+      const res = await fetch("http://localhost:3000/api/truck-schedule", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...tokenHeader },
         body: JSON.stringify({
@@ -352,7 +352,7 @@ const AdminDashboard = () => {
       available_quantity: Number(newProduct.available_quantity),
     };
     try {
-      const res = await fetch("http://localhost:5000/api/admin/products", {
+      const res = await fetch("http://localhost:3000/api/products", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...tokenHeader },
         body: JSON.stringify(payload),
@@ -371,7 +371,7 @@ const AdminDashboard = () => {
     e.preventDefault();
     if (!priceEdit.product_id || !priceEdit.price) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/products/${encodeURIComponent(priceEdit.product_id)}`, {
+      const res = await fetch(`http://localhost:3000/api/products/${encodeURIComponent(priceEdit.product_id)}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...tokenHeader },
         body: JSON.stringify({ price: Number(priceEdit.price) }),
@@ -392,16 +392,16 @@ const AdminDashboard = () => {
     try {
       // Map report key -> endpoint using your DB views
       const ep = {
-        "Quarterly Sales": "/api/admin/reports/quarterly-sales", // v_quarterly_sales
-        "Train Utilization": "/api/admin/reports/train-utilization", // custom
-        "Truck Performance": "/api/admin/reports/truck-usage", // v_truck_usage
-        "Worker Hours": "/api/admin/reports/worker-hours", // v_worker_hours
-        "City-wise Sales": "/api/admin/reports/city-route-sales", // v_city_route_sales
-        "Top Products": "/api/admin/reports/quarter-top-items", // v_quarter_top_items
+        "Quarterly Sales": "/api/reports/quarterly-sales", // v_quarterly_sales
+        "Train Utilization": "/api/reports/train-utilization", // custom
+        "Truck Performance": "/api/reports/truck-usage", // v_truck_usage
+        "Worker Hours": "/api/reports/worker-hours", // v_worker_hours
+        "City-wise Sales": "/api/reports/city-route-sales", // v_city_route_sales
+        "Top Products": "/api/reports/quarter-top-items", // v_quarter_top_items
       }[key];
 
       if (ep) {
-        const res = await fetch(`http://localhost:5000${ep}`, { headers: tokenHeader });
+        const res = await fetch(`http://localhost:3000${ep}`, { headers: tokenHeader });
         if (res.ok) {
           const d = await res.json();
           setReportData(Array.isArray(d) ? d : []);
@@ -830,7 +830,7 @@ const AdminDashboard = () => {
               e.preventDefault();
               setSubmitting("driver");
               try {
-                const res = await fetch("http://localhost:5000/api/admin/drivers", {
+                const res = await fetch("http://localhost:3000/api/drivers", {
                   method: "POST",
                   headers: { "Content-Type": "application/json", ...tokenHeader },
                   body: JSON.stringify(driverForm),
@@ -899,7 +899,7 @@ const AdminDashboard = () => {
               e.preventDefault();
               setSubmitting("assistant");
               try {
-                const res = await fetch("http://localhost:5000/api/admin/assistants", {
+                const res = await fetch("http://localhost:3000/api/assistants", {
                   method: "POST",
                   headers: { "Content-Type": "application/json", ...tokenHeader },
                   body: JSON.stringify(assistantForm),
@@ -974,7 +974,7 @@ const AdminDashboard = () => {
               setSubmitting("truck");
               const payload = { ...newTruck, capacity: newTruck.capacity ? Number(newTruck.capacity) : 0 };
               try {
-                const res = await fetch("http://localhost:5000/api/admin/trucks", {
+                const res = await fetch("http://localhost:3000/api/trucks", {
                   method: "POST",
                   headers: { "Content-Type": "application/json", ...tokenHeader },
                   body: JSON.stringify(payload),
@@ -1028,7 +1028,7 @@ const AdminDashboard = () => {
               setSubmitting("train");
               const payload = { ...newTrain, capacity: newTrain.capacity ? Number(newTrain.capacity) : 0 };
               try {
-                const res = await fetch("http://localhost:5000/api/admin/trains", {
+                const res = await fetch("http://localhost:3000/api/trains", {
                   method: "POST",
                   headers: { "Content-Type": "application/json", ...tokenHeader },
                   body: JSON.stringify(payload),

@@ -46,9 +46,39 @@ export default function Trains() {
   useEffect(() => {
     (async () => {
       try {
-        const r = await fetch("http://localhost:5000/api/admin/trains", { headers: tokenHeader });
-        if (r.ok) return setTrains(await r.json());
-      } catch {}
+        const r = await fetch("http://localhost:3000/api/trains", { headers: tokenHeader });
+        if (r.ok) {
+          const data = await r.json();
+          
+          // Handle multiple response formats:
+          // 1. Direct array: [...]
+          // 2. {trains: [...]}
+          // 3. {data: [...]}
+          // 4. {data: {trains: [...]}}
+          // 5. {success: true, data: {...}}
+          let trainsArray = [];
+          
+          if (Array.isArray(data)) {
+            trainsArray = data;
+          } else if (data.data) {
+            if (Array.isArray(data.data)) {
+              trainsArray = data.data;
+            } else if (data.data.trains) {
+              trainsArray = data.data.trains;
+            } else {
+              // data.data is an object, might contain the trains directly
+              trainsArray = Object.values(data.data);
+            }
+          } else if (data.trains) {
+            trainsArray = data.trains;
+          }
+          
+          setTrains(trainsArray);
+          return;
+        }
+      } catch (error) {
+        console.error('Failed to fetch trains:', error);
+      }
       setTrains([{ train_id: "TR100", capacity: 200, notes: "" }]); // fallback sample
     })();
   }, []);
@@ -76,14 +106,14 @@ export default function Trains() {
     }
 
     try {
-      const r1 = await fetch("http://localhost:5000/api/admin/trains", {
+      const r1 = await fetch("http://localhost:3000/api/trains", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...tokenHeader },
         body: JSON.stringify(trainPayload),
       });
       if (!r1.ok) throw new Error("Train create failed");
 
-      const r2 = await fetch("http://localhost:5000/api/admin/train-routes", {
+      const r2 = await fetch("http://localhost:3000/api/train-routes", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...tokenHeader },
         body: JSON.stringify(routePayload),
@@ -161,7 +191,7 @@ export default function Trains() {
     setSavingId(id);
     const payload = { capacity: Number(editForm.capacity || 0), notes: editForm.notes?.trim() || "" };
     try {
-      const r = await fetch(`http://localhost:5000/api/admin/trains/${encodeURIComponent(id)}`, {
+      const r = await fetch(`http://localhost:3000/api/trains/${encodeURIComponent(id)}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...tokenHeader },
         body: JSON.stringify(payload),
@@ -183,7 +213,7 @@ export default function Trains() {
     if (!window.confirm("Delete this train?")) return;
     setDeletingId(id);
     try {
-      const r = await fetch(`http://localhost:5000/api/admin/trains/${encodeURIComponent(id)}`, {
+      const r = await fetch(`http://localhost:3000/api/trains/${encodeURIComponent(id)}`, {
         method: "DELETE",
         headers: tokenHeader,
       });

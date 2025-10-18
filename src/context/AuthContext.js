@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { authAPI, handleAPIError } from '../services/api';
+import { authService } from '../services/auth.service';
+import { handleAPIError } from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -10,12 +11,14 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const initAuth = async () => {
       const token = localStorage.getItem('authToken');
-      if (token) {
+      const savedUser = localStorage.getItem('user');
+      
+      if (token && savedUser) {
         try {
-          const response = await authAPI.verify();
-          setUser(response.data.user);
+          // Restore user from localStorage
+          setUser(JSON.parse(savedUser));
         } catch (error) {
-          console.error('Token verification failed:', error);
+          console.error('User restore failed:', error);
           localStorage.removeItem('authToken');
           localStorage.removeItem('user');
         }
@@ -28,15 +31,44 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password, role, portalType = 'auto') => {
     try {
-      const response = await authAPI.login({ username, password, role, portalType });
-      const { user: userData, token } = response.data;
+      let response;
+      let credentials;
+      
+      // Route to appropriate login endpoint based on role with correct credential format
+      switch (role) {
+        case 'admin':
+          credentials = { admin_id: username, password };
+          response = await authService.admin.login(credentials);
+          break;
+        case 'driver':
+          credentials = { driver_id: username, password };
+          response = await authService.driver.login(credentials);
+          break;
+        case 'assistant':
+          credentials = { assistant_id: username, password };
+          response = await authService.assistant.login(credentials);
+          break;
+        case 'customer':
+        default:
+          credentials = { email: username, password };
+          response = await authService.login(credentials);
+          break;
+      }
+      
+      // Handle new backend response format: { success: true, data: { admin/customer: {...}, token: "..." } }
+      const token = response.data?.token || response.token;
+      const userData = response.data?.admin || response.data?.customer || response.data?.driver || response.data?.assistant || response.user || response.data;
+      
+      if (!token) {
+        throw new Error('No token received from server');
+      }
       
       // Determine portal type based on role if not specified
       const finalPortalType = portalType === 'auto' 
-        ? (userData.role === 'customer' ? 'customer' : 'employee')
+        ? (role === 'customer' ? 'customer' : 'employee')
         : portalType;
       
-      const userWithPortal = { ...userData, portalType: finalPortalType };
+      const userWithPortal = { ...userData, role, portalType: finalPortalType };
       
       localStorage.setItem('authToken', token);
       localStorage.setItem('user', JSON.stringify(userWithPortal));
@@ -50,8 +82,8 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (userData, portalType = 'customer') => {
     try {
-      const response = await authAPI.register(userData);
-      const { user: newUser, token } = response.data;
+      const response = await authService.register(userData);
+      const { user: newUser, token } = response;
       
       const userWithPortal = { ...newUser, role: 'customer', portalType: 'customer' };
       
@@ -67,7 +99,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      await authAPI.logout();
+      await authService.logout();
     } catch (error) {
       console.error('Logout error:', error);
     } finally {

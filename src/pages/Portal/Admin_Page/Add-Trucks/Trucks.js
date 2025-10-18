@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./trucks.css"; // Reuse the same CSS rules as products.css
 
-const tokenHeader = { Authorization: `Bearer ${localStorage.getItem("authToken") || "demo"}` };
+const tokenHeader = { Authorization: `Bearer ${localStorage.getItem("authToken") }` };
 
 export default function Trucks() {
   const [trucks, setTrucks] = useState([]);
@@ -23,14 +23,42 @@ export default function Trucks() {
   useEffect(() => {
     (async () => {
       try {
-        const r = await fetch("http://localhost:5000/api/admin/trucks", { headers: tokenHeader });
-        if (r.ok) return setTrucks(await r.json());
-      } catch {}
-      // demo fallback
-      setTrucks([
-        { truck_id: "TK01", license_plate: "WP-1234", capacity: 60 },
-        { truck_id: "TK02", license_plate: "SP-5678", capacity: 45 },
-      ]);
+        const r = await fetch("http://localhost:3000/api/trucks", {
+          headers: tokenHeader
+        });
+        
+        if (r.ok) {
+          const data = await r.json();
+          
+          // Handle multiple response formats:
+          // 1. Direct array: [...]
+          // 2. {trucks: [...]}
+          // 3. {data: [...]}
+          // 4. {data: {trucks: [...]}}
+          // 5. {success: true, data: {...}}
+          let trucksArray = [];
+          
+          if (Array.isArray(data)) {
+            trucksArray = data;
+          } else if (data.data) {
+            if (Array.isArray(data.data)) {
+              trucksArray = data.data;
+            } else if (data.data.trucks) {
+              trucksArray = data.data.trucks;
+            } else {
+              // data.data is an object, might contain the trucks directly
+              trucksArray = Object.values(data.data);
+            }
+          } else if (data.trucks) {
+            trucksArray = data.trucks;
+          }
+          
+          setTrucks(trucksArray);
+        }
+      } catch (error) {
+        console.error('Failed to fetch trucks:', error);
+        setTrucks([]);
+      }
     })();
   }, []);
 
@@ -40,7 +68,7 @@ export default function Trucks() {
     setAdding(true);
     const payload = { ...form, capacity: Number(form.capacity || 0) };
     try {
-      const r = await fetch("http://localhost:5000/api/admin/trucks", {
+      const r = await fetch("http://localhost:3000/api/trucks", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...tokenHeader },
         body: JSON.stringify(payload),
@@ -76,7 +104,7 @@ export default function Trucks() {
     setSavingId(id);
     const payload = { license_plate: editForm.license_plate, capacity: Number(editForm.capacity || 0) };
     try {
-      const r = await fetch(`http://localhost:5000/api/admin/trucks/${encodeURIComponent(id)}`, {
+      const r = await fetch(`http://localhost:3000/api/trucks/${encodeURIComponent(id)}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...tokenHeader },
         body: JSON.stringify(payload),
@@ -98,7 +126,7 @@ export default function Trucks() {
     if (!window.confirm("Delete this truck?")) return;
     setDeletingId(id);
     try {
-      const r = await fetch(`http://localhost:5000/api/admin/trucks/${encodeURIComponent(id)}`, {
+      const r = await fetch(`http://localhost:3000/api/trucks/${encodeURIComponent(id)}`, {
         method: "DELETE",
         headers: tokenHeader,
       });
@@ -113,8 +141,11 @@ export default function Trucks() {
 
   // Derived list: filter only (no sort)
   const visibleTrucks = useMemo(() => {
+    if (!Array.isArray(trucks)) return [];
+    
     const q = query.trim().toLowerCase();
     if (!q) return trucks;
+    
     return trucks.filter((t) => {
       const hay = `${t.truck_id || t.id} ${t.license_plate} ${t.capacity}`.toLowerCase();
       return hay.includes(q);
@@ -178,7 +209,7 @@ export default function Trucks() {
               aria-label="Search trucks"
             />
             <div className="muted">
-              Showing <b>{visibleTrucks.length}</b> of <b>{trucks.length}</b>
+              Showing <b>{visibleTrucks?.length || 0}</b> of <b>{trucks?.length || 0}</b>
             </div>
           </div>
         </div>
@@ -198,7 +229,7 @@ export default function Trucks() {
             </tr>
           </thead>
           <tbody>
-            {visibleTrucks.map((t) => {
+            {Array.isArray(visibleTrucks) && visibleTrucks.map((t) => {
               const id = t.truck_id || t.id;
               const isEditing = editingId === id;
               return (
@@ -258,7 +289,7 @@ export default function Trucks() {
                 </tr>
               );
             })}
-            {visibleTrucks.length === 0 && (
+            {(!visibleTrucks || visibleTrucks.length === 0) && (
               <tr>
                 <td colSpan={4} className="empty">No matching trucks</td>
               </tr>

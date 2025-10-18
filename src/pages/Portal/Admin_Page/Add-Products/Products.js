@@ -47,9 +47,33 @@ export default function Products() {
   useEffect(() => {
     (async () => {
       try {
-        const r = await fetch("http://localhost:5000/api/admin/products", { headers: tokenHeader });
-        if (r.ok) return setProducts(await r.json());
-      } catch {}
+        const r = await fetch("http://localhost:3000/api/products", { headers: tokenHeader });
+        if (r.ok) {
+          const data = await r.json();
+          
+          // Handle multiple response formats
+          let productsArray = [];
+          
+          if (Array.isArray(data)) {
+            productsArray = data;
+          } else if (data.data) {
+            if (Array.isArray(data.data)) {
+              productsArray = data.data;
+            } else if (data.data.products) {
+              productsArray = data.data.products;
+            } else {
+              productsArray = Object.values(data.data);
+            }
+          } else if (data.products) {
+            productsArray = data.products;
+          }
+          
+          setProducts(productsArray);
+          return;
+        }
+      } catch (error) {
+        console.error('Failed to fetch products:', error);
+      }
       // Fallback demo
       setProducts([
         { product_id: "P001", name: "Detergent Box", description: "1kg box", price: 600, space_consumption: 0.5, category: "FMCG", available_quantity: 200 },
@@ -70,7 +94,7 @@ export default function Products() {
       available_quantity: Number(form.available_quantity || 0),
     };
     try {
-      const r = await fetch("http://localhost:5000/api/admin/products", {
+      const r = await fetch("http://localhost:3000/api/products", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...tokenHeader },
         body: JSON.stringify(payload),
@@ -136,7 +160,7 @@ export default function Products() {
       available_quantity: Number(editForm.available_quantity || 0),
     };
     try {
-      const r = await fetch(`http://localhost:5000/api/admin/products/${encodeURIComponent(id)}`, {
+      const r = await fetch(`http://localhost:3000/api/products/${encodeURIComponent(id)}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...tokenHeader },
         body: JSON.stringify(payload),
@@ -159,7 +183,7 @@ export default function Products() {
     if (!ok) return;
     setDeletingId(id);
     try {
-      const r = await fetch(`http://localhost:5000/api/admin/products/${encodeURIComponent(id)}`, {
+      const r = await fetch(`http://localhost:3000/api/products/${encodeURIComponent(id)}`, {
         method: "DELETE",
         headers: tokenHeader,
       });

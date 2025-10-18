@@ -50,7 +50,7 @@ export const AuthProvider = ({ children }) => {
           break;
         case 'customer':
         default:
-          credentials = { email: username, password };
+          credentials = { user_name: username, password };
           response = await authService.login(credentials);
           break;
       }

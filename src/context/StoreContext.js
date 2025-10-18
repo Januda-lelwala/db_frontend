@@ -139,16 +139,49 @@ export const StoreProvider = ({ children }) => {
     });
 
     const fetchProducts = async () => {
+      console.log('🔍 StoreContext: Fetching products from backend...');
       try {
-        const { data } = await productsAPI.getAll({ page: 1, limit: 200 });
-        const incoming = Array.isArray(data?.products) ? data.products : [];
-        if (!didCancel) {
+        // Try without query params first (some backends don't handle them)
+        const response = await productsAPI.getAll();
+        console.log('📡 StoreContext: Raw response:', response);
+        const responseData = response.data;
+        console.log('📦 StoreContext: Response data:', responseData);
+        
+        // Handle multiple backend response formats:
+        // 1. {success: true, data: [...]}
+        // 2. {success: true, data: {products: [...]}}
+        // 3. {products: [...]}
+        // 4. Direct array [...]
+        let incoming = [];
+        
+        if (Array.isArray(responseData)) {
+          incoming = responseData;
+        } else if (responseData?.data) {
+          if (Array.isArray(responseData.data)) {
+            incoming = responseData.data;
+          } else if (Array.isArray(responseData.data.products)) {
+            incoming = responseData.data.products;
+          } else {
+            incoming = Object.values(responseData.data);
+          }
+        } else if (Array.isArray(responseData?.products)) {
+          incoming = responseData.products;
+        }
+        
+        if (!didCancel && incoming.length > 0) {
           const mapped = incoming.map(mapProduct);
+          console.log('✅ StoreContext: Loaded', mapped.length, 'products from backend');
+          console.log('📦 StoreContext: First product:', mapped[0]);
           setProducts(mapped);
+        } else if (!didCancel) {
+          console.warn('⚠️ StoreContext: No products received from backend, keeping seed products');
+          console.log('   Incoming array:', incoming);
         }
       } catch (err) {
         // Keep seed/local products on failure; log once for visibility
-        console.warn('Failed to load products from API; using local products. Reason:', err?.message || err);
+        console.error('❌ StoreContext: Failed to load products from API; using local products.');
+        console.error('   Error:', err);
+        console.error('   Error message:', err?.message);
       }
     };
 
@@ -160,8 +193,26 @@ export const StoreProvider = ({ children }) => {
   // Optional: expose a manual refresh method
   const refreshProducts = useCallback(async () => {
     try {
-      const { data } = await productsAPI.getAll({ page: 1, limit: 200 });
-      const incoming = Array.isArray(data?.products) ? data.products : [];
+      const response = await productsAPI.getAll();
+      const responseData = response.data;
+      
+      // Handle multiple backend response formats
+      let incoming = [];
+      
+      if (Array.isArray(responseData)) {
+        incoming = responseData;
+      } else if (responseData?.data) {
+        if (Array.isArray(responseData.data)) {
+          incoming = responseData.data;
+        } else if (Array.isArray(responseData.data.products)) {
+          incoming = responseData.data.products;
+        } else {
+          incoming = Object.values(responseData.data);
+        }
+      } else if (Array.isArray(responseData?.products)) {
+        incoming = responseData.products;
+      }
+      
       const mapped = incoming.map((p, i) => ({
         id: p.product_id ?? p.id ?? p.productId ?? p.productID ?? `TMP_${i}`,
         title: p.product_name ?? p.title ?? p.name ?? 'Untitled Product',

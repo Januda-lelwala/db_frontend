@@ -35,6 +35,27 @@ import {
   ChevronUp as ChevronUpIcon,
 } from 'lucide-react';
 
+// Simple placeholder image as data URL (gray box with text)
+const getPlaceholderImage = (text) => {
+  const canvas = document.createElement('canvas');
+  canvas.width = 300;
+  canvas.height = 200;
+  const ctx = canvas.getContext('2d');
+  
+  // Background
+  ctx.fillStyle = '#f0f0f0';
+  ctx.fillRect(0, 0, 300, 200);
+  
+  // Text
+  ctx.fillStyle = '#999';
+  ctx.font = 'bold 20px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text || 'Product', 150, 100);
+  
+  return canvas.toDataURL();
+};
+
 // --- Profile Menu Component for Products Page ---
 const ProductsProfileMenu = ({ user, onLogout }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -1016,11 +1037,11 @@ export default function Product() {
                   }}>
                     <img 
                       className="product-image"
-                      src={p.image || `https://via.placeholder.com/300x200/4facfe/ffffff?text=${encodeURIComponent(p.title.split(' ')[0])}`}
+                      src={p.image || getPlaceholderImage(p.title.split(' ')[0])}
                       alt={p.title}
                       style={styles.productImage}
                       onError={(e) => {
-                        e.target.src = `https://via.placeholder.com/300x200/4facfe/ffffff?text=${encodeURIComponent(p.title.split(' ')[0])}`;
+                        e.target.src = getPlaceholderImage(p.title.split(' ')[0]);
                       }}
                     />
                     <div style={styles.imageOverlay}>
@@ -1193,7 +1214,7 @@ export default function Product() {
             </div>
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,padding:'0 16px 16px'}}>
               <div style={{display:'grid',placeItems:'center',background:'#f8fafc',borderRadius:12,padding:12}}>
-                <img alt={quickView.title} src={quickView.image || `https://via.placeholder.com/400x300/4facfe/ffffff?text=${encodeURIComponent(quickView.title.split(' ')[0])}`} style={{maxWidth:'100%',maxHeight:240,objectFit:'contain'}} />
+                <img alt={quickView.title} src={quickView.image || getPlaceholderImage(quickView.title.split(' ')[0])} style={{maxWidth:'100%',maxHeight:240,objectFit:'contain'}} />
               </div>
               <div>
                 <div style={{fontSize:'1.4rem',fontWeight:800,marginBottom:8}}>${quickView.price.toFixed(2)}</div>
@@ -1226,7 +1247,7 @@ export default function Product() {
               return (
                 <div key={id} style={styles.compareItem}>
                   <div style={styles.compareThumb}>
-                    <img alt={p.title} src={p.image || `https://via.placeholder.com/64x64/4facfe/ffffff?text=${encodeURIComponent(p.title.split(' ')[0])}`} style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:8}} />
+                    <img alt={p.title} src={p.image || getPlaceholderImage(p.title.split(' ')[0])} style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:8}} />
                   </div>
                   <div style={styles.compareMeta}>
                     <div style={styles.compareTitle}>{p.title}</div>

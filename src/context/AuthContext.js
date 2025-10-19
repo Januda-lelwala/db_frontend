@@ -13,15 +13,22 @@ export const AuthProvider = ({ children }) => {
       const token = localStorage.getItem('authToken');
       const savedUser = localStorage.getItem('user');
       
+      console.log('🔄 AuthContext initializing...');
+      console.log('📦 localStorage check:', { hasToken: !!token, hasUser: !!savedUser });
+      
       if (token && savedUser) {
         try {
           // Restore user from localStorage
-          setUser(JSON.parse(savedUser));
+          const parsedUser = JSON.parse(savedUser);
+          setUser(parsedUser);
+          console.log('✅ User restored from localStorage:', parsedUser.role);
         } catch (error) {
-          console.error('User restore failed:', error);
+          console.error('❌ User restore failed:', error);
           localStorage.removeItem('authToken');
           localStorage.removeItem('user');
         }
+      } else {
+        console.log('ℹ️ No saved session found');
       }
       setLoading(false);
     };
@@ -30,6 +37,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (username, password, role, portalType = 'auto') => {
+    console.log('🔐 Login attempt:', { username, role, portalType });
     try {
       let response;
       let credentials;
@@ -55,11 +63,21 @@ export const AuthProvider = ({ children }) => {
           break;
       }
       
-      // Handle new backend response format: { success: true, data: { admin/customer: {...}, token: "..." } }
-      const token = response.data?.token || response.token;
-      const userData = response.data?.admin || response.data?.customer || response.data?.driver || response.data?.assistant || response.user || response.data;
+      // Debug: Log raw backend response
+      console.log('📡 Raw login response:', response);
+      console.log('📦 Response.data:', response.data);
+      
+      // Handle backend response format: { success: true, data: { customer/admin/driver/assistant: {...}, token: "..." } }
+      // Axios wraps the response, so the actual data is at response.data.data
+      const responseData = response.data?.data || response.data;
+      const token = responseData?.token || response.data?.token || response.token;
+      const userData = responseData?.admin || responseData?.customer || responseData?.driver || responseData?.assistant || response.data?.user || response.user || responseData;
+      
+      console.log('🔍 Extracted token:', token ? token.substring(0, 20) + '...' : 'NULL');
+      console.log('🔍 Extracted userData:', userData);
       
       if (!token) {
+        console.error('❌ No token in response! Full response:', JSON.stringify(response, null, 2));
         throw new Error('No token received from server');
       }
       
@@ -70,12 +88,19 @@ export const AuthProvider = ({ children }) => {
       
       const userWithPortal = { ...userData, role, portalType: finalPortalType };
       
+      // Save token and user to localStorage
       localStorage.setItem('authToken', token);
       localStorage.setItem('user', JSON.stringify(userWithPortal));
+      console.log('✅ Login successful - Token and user saved to localStorage');
+      console.log('🔑 Token preview:', token.substring(0, 20) + '...');
+      console.log('👤 User:', { ...userWithPortal, password: undefined });
+      
       setUser(userWithPortal);
       
       return userWithPortal;
     } catch (error) {
+      console.error('❌ Login failed:', error);
+      console.error('Error response:', error?.response?.data);
       throw new Error(handleAPIError(error));
     }
   };
@@ -83,7 +108,11 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData, portalType = 'customer') => {
     try {
       const response = await authService.register(userData);
-      const { user: newUser, token } = response;
+      
+      // Handle backend response format: { success: true, data: { customer: {...}, token: "..." } }
+      const responseData = response.data?.data || response.data;
+      const token = responseData?.token || response.data?.token || response.token;
+      const newUser = responseData?.customer || response.data?.user || response.user || responseData;
       
       const userWithPortal = { ...newUser, role: 'customer', portalType: 'customer' };
       

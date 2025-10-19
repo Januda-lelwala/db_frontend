@@ -100,7 +100,9 @@ export default function Products() {
         body: JSON.stringify(payload),
       });
       if (!r.ok) throw new Error();
-      const added = await r.json();
+      const response = await r.json();
+      // Handle backend response format: {success: true, data: {...}}
+      const added = response.data || response;
       setProducts((p) => [added, ...p]);
     } catch {
       setProducts((p) => [payload, ...p]); // demo fallback

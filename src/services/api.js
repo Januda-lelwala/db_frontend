@@ -13,7 +13,9 @@ const api = axios.create({
   },
 });
 
-// Add token to requests if available
+// IMPORTANT: Add JWT token to ALL requests automatically
+// This interceptor adds the Authorization header with the JWT token from localStorage
+// to every API request, including customer orders (POST /api/orders)
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('authToken');
@@ -94,12 +96,14 @@ export const productsAPI = {
 };
 
 // Orders API
+// NOTE: JWT token is automatically included via axios interceptor (lines 19-33)
 export const ordersAPI = {
   // Important: Do NOT fallback to mock for auth-protected customer data.
   // Returning mock orders can show fake data for new customers.
   getAll: (params = {}) => api.get('/orders', { params }),
   getById: (id) => api.get(`/orders/${id}`),
   getTracking: (id) => api.get(`/orders/${id}/tracking`),
+  // create: Requires JWT token - automatically added by interceptor
   create: (orderData) => api.post('/orders', orderData),
   updateStatus: (id, status) => api.put(`/orders/${id}/status`, { order_status: status }),
   getAllForAdmin: (params = {}) => api.get('/orders/admin/all', { params })

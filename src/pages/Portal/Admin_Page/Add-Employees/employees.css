@@ -172,6 +172,26 @@
 }
 .employees .btn.danger { background: var(--danger); color: #fff; border: none; }
 
+/* Icon buttons (e.g., delete) */
+.employees .btn-icon {
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  background: var(--button-surface);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  font-size: 18px;
+  transition: transform .06s ease, background .12s ease, opacity .12s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.employees .btn-icon:hover {
+  transform: translateY(-1px);
+  background: #fee;
+}
+.employees .btn-icon:active { transform: translateY(0); }
+.employees .btn-icon:disabled { opacity: .5; cursor: not-allowed; }
+
 /* Table */
 .employees .table-wrap {
   overflow: auto;

@@ -139,13 +139,9 @@ export const StoreProvider = ({ children }) => {
     });
 
     const fetchProducts = async () => {
-      console.log('🔍 StoreContext: Fetching products from backend...');
       try {
-        // Try without query params first (some backends don't handle them)
-        const response = await productsAPI.getAll();
-        console.log('📡 StoreContext: Raw response:', response);
+        const response = await productsAPI.getAll({ page: 1, limit: 200 });
         const responseData = response.data;
-        console.log('📦 StoreContext: Response data:', responseData);
         
         // Handle multiple backend response formats:
         // 1. {success: true, data: [...]}
@@ -170,18 +166,14 @@ export const StoreProvider = ({ children }) => {
         
         if (!didCancel && incoming.length > 0) {
           const mapped = incoming.map(mapProduct);
-          console.log('✅ StoreContext: Loaded', mapped.length, 'products from backend');
-          console.log('📦 StoreContext: First product:', mapped[0]);
+          console.log('✅ Loaded', mapped.length, 'products from backend');
           setProducts(mapped);
         } else if (!didCancel) {
-          console.warn('⚠️ StoreContext: No products received from backend, keeping seed products');
-          console.log('   Incoming array:', incoming);
+          console.warn('No products received from backend, keeping seed products');
         }
       } catch (err) {
         // Keep seed/local products on failure; log once for visibility
-        console.error('❌ StoreContext: Failed to load products from API; using local products.');
-        console.error('   Error:', err);
-        console.error('   Error message:', err?.message);
+        console.warn('Failed to load products from API; using local products. Reason:', err?.message || err);
       }
     };
 
@@ -193,7 +185,7 @@ export const StoreProvider = ({ children }) => {
   // Optional: expose a manual refresh method
   const refreshProducts = useCallback(async () => {
     try {
-      const response = await productsAPI.getAll();
+      const response = await productsAPI.getAll({ page: 1, limit: 200 });
       const responseData = response.data;
       
       // Handle multiple backend response formats

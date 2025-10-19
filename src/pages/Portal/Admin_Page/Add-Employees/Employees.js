@@ -45,6 +45,9 @@ export default function Employees() {
     admin_id: "", name: "", email: "", phone_no: "", role: "admin",
   });
 
+  // Delete state
+  const [deletingId, setDeletingId] = useState(null);
+
   useEffect(() => {
     (async () => {
       // Helper function to extract array from various response formats
@@ -108,7 +111,9 @@ export default function Employees() {
         driver_id: driverForm.driver_id
       };
       const created = await authService.driver.register(payload);
-      setDrivers((d) => [created.user || driverForm, ...d]);
+      // Handle response format: {success: true, data: {driver: {...}, token: "..."}}
+      const newDriver = created.data?.driver || created.driver || created.user || driverForm;
+      setDrivers((d) => [newDriver, ...d]);
       setDriverForm({ driver_id: "", name: "", address: "", phone_no: "", email: "" });
       alert(`Driver added successfully! Credentials will be sent via ${delivery.label}.\nEmail: ${driverForm.email}\nPassword: ${password}`);
     } catch (error) {
@@ -133,7 +138,9 @@ export default function Employees() {
         assistant_id: assistantForm.assistant_id
       };
       const created = await authService.assistant.register(payload);
-      setAssistants((a) => [created.user || assistantForm, ...a]);
+      // Handle response format: {success: true, data: {assistant: {...}, token: "..."}}
+      const newAssistant = created.data?.assistant || created.assistant || created.user || assistantForm;
+      setAssistants((a) => [newAssistant, ...a]);
       setAssistantForm({ assistant_id: "", name: "", address: "", phone_no: "", email: "" });
       alert(`Assistant added successfully! Credentials will be sent via ${delivery.label}.\nEmail: ${assistantForm.email}\nPassword: ${password}`);
     } catch (error) {
@@ -157,12 +164,72 @@ export default function Employees() {
         admin_id: adminForm.admin_id
       };
       const created = await authService.admin.register(payload);
-      setAdmins((a) => [created.user || adminForm, ...a]);
+      // Handle response format: {success: true, data: {admin: {...}, token: "..."}}
+      const newAdmin = created.data?.admin || created.admin || created.user || adminForm;
+      setAdmins((a) => [newAdmin, ...a]);
       setAdminForm({ admin_id: "", name: "", email: "", phone_no: "", role: "admin" });
       alert(`Admin added successfully!\nEmail: ${adminForm.email}\nPassword: ${password}\n\nPlease save these credentials securely.`);
     } catch (error) {
       console.error('Admin registration error:', error);
       alert(`Error adding admin: ${error.message}`);
+    }
+  };
+
+  // Delete functions
+  const deleteDriver = async (id) => {
+    const ok = window.confirm("Are you sure you want to delete this driver?");
+    if (!ok) return;
+    setDeletingId(id);
+    try {
+      const r = await fetch(`http://localhost:3000/api/drivers/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        headers: tokenHeader,
+      });
+      if (!r.ok) throw new Error();
+      setDrivers((d) => d.filter((x) => (x.driver_id || x.id) !== id));
+    } catch (error) {
+      console.error('Delete driver error:', error);
+      alert('Failed to delete driver');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const deleteAssistant = async (id) => {
+    const ok = window.confirm("Are you sure you want to delete this assistant?");
+    if (!ok) return;
+    setDeletingId(id);
+    try {
+      const r = await fetch(`http://localhost:3000/api/assistants/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        headers: tokenHeader,
+      });
+      if (!r.ok) throw new Error();
+      setAssistants((a) => a.filter((x) => (x.assistant_id || x.id) !== id));
+    } catch (error) {
+      console.error('Delete assistant error:', error);
+      alert('Failed to delete assistant');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const deleteAdmin = async (id) => {
+    const ok = window.confirm("Are you sure you want to delete this admin?");
+    if (!ok) return;
+    setDeletingId(id);
+    try {
+      const r = await fetch(`http://localhost:3000/api/admins/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        headers: tokenHeader,
+      });
+      if (!r.ok) throw new Error();
+      setAdmins((a) => a.filter((x) => (x.admin_id || x.id) !== id));
+    } catch (error) {
+      console.error('Delete admin error:', error);
+      alert('Failed to delete admin');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -226,16 +293,29 @@ export default function Employees() {
 
           <div className="table-wrap">
             <table>
-              <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th></tr></thead>
+              <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Actions</th></tr></thead>
               <tbody>
-                {admins.slice(0,6).map((a,i)=> (
-                  <tr key={i}>
-                    <td className="mono">{a.admin_id || a.id}</td>
-                    <td>{a.name}</td>
-                    <td>{a.email || "-"}</td>
-                    <td>{a.phone_no || a.phone || "-"}</td>
-                  </tr>
-                ))}
+                {admins.slice(0,6).map((a,i)=> {
+                  const id = a.admin_id || a.id;
+                  return (
+                    <tr key={i}>
+                      <td className="mono">{id}</td>
+                      <td>{a.name}</td>
+                      <td>{a.email || "-"}</td>
+                      <td>{a.phone_no || a.phone || "-"}</td>
+                      <td>
+                        <button 
+                          className="btn-icon" 
+                          onClick={() => deleteAdmin(id)}
+                          disabled={deletingId === id}
+                          title="Delete admin"
+                        >
+                          {deletingId === id ? '⏳' : '🗑️'}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -267,17 +347,30 @@ export default function Employees() {
 
           <div className="table-wrap">
             <table>
-              <thead><tr><th>ID</th><th>Name</th><th>Address</th><th>Phone</th><th>Email</th></tr></thead>
+              <thead><tr><th>ID</th><th>Name</th><th>Address</th><th>Phone</th><th>Email</th><th>Actions</th></tr></thead>
               <tbody>
-                {drivers.slice(0,6).map((d,i)=> (
-                  <tr key={i}>
-                    <td className="mono">{d.driver_id || d.id}</td>
-                    <td>{d.name}</td>
-                    <td>{d.address || "-"}</td>
-                    <td>{d.phone_no || d.phone || "-"}</td>
-                    <td>{d.email || "-"}</td>
-                  </tr>
-                ))}
+                {drivers.slice(0,6).map((d,i)=> {
+                  const id = d.driver_id || d.id;
+                  return (
+                    <tr key={i}>
+                      <td className="mono">{id}</td>
+                      <td>{d.name}</td>
+                      <td>{d.address || "-"}</td>
+                      <td>{d.phone_no || d.phone || "-"}</td>
+                      <td>{d.email || "-"}</td>
+                      <td>
+                        <button 
+                          className="btn-icon" 
+                          onClick={() => deleteDriver(id)}
+                          disabled={deletingId === id}
+                          title="Delete driver"
+                        >
+                          {deletingId === id ? '⏳' : '🗑️'}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -309,17 +402,30 @@ export default function Employees() {
 
           <div className="table-wrap">
             <table>
-              <thead><tr><th>ID</th><th>Name</th><th>Address</th><th>Phone</th><th>Email</th></tr></thead>
+              <thead><tr><th>ID</th><th>Name</th><th>Address</th><th>Phone</th><th>Email</th><th>Actions</th></tr></thead>
               <tbody>
-                {assistants.slice(0,6).map((a,i)=> (
-                  <tr key={i}>
-                    <td className="mono">{a.assistant_id || a.id}</td>
-                    <td>{a.name}</td>
-                    <td>{a.address || "-"}</td>
-                    <td>{a.phone_no || a.phone || "-"}</td>
-                    <td>{a.email || "-"}</td>
-                  </tr>
-                ))}
+                {assistants.slice(0,6).map((a,i)=> {
+                  const id = a.assistant_id || a.id;
+                  return (
+                    <tr key={i}>
+                      <td className="mono">{id}</td>
+                      <td>{a.name}</td>
+                      <td>{a.address || "-"}</td>
+                      <td>{a.phone_no || a.phone || "-"}</td>
+                      <td>{a.email || "-"}</td>
+                      <td>
+                        <button 
+                          className="btn-icon" 
+                          onClick={() => deleteAssistant(id)}
+                          disabled={deletingId === id}
+                          title="Delete assistant"
+                        >
+                          {deletingId === id ? '⏳' : '🗑️'}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

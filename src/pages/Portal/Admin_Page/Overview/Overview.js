@@ -4,7 +4,6 @@ import "./overview.css";
 const tokenHeader = { Authorization: `Bearer ${localStorage.getItem("authToken")}` };
 
 export default function Overview({ onGoAllocate }) {
-  const [stats, setStats] = useState({});
   const [pendingOrders, setPendingOrders] = useState([]);
   const [resources, setResources] = useState({ drivers: 0, assistants: 0, trucks: 0, trains: 0 });
 
@@ -21,23 +20,8 @@ export default function Overview({ onGoAllocate }) {
       return [];
     };
 
-    // stats - we'll calculate from actual data instead of relying on backend stats
-    // Keep capacity utilization from backend if available
-    (async () => {
-      try {
-        const r = await fetch("http://localhost:3000/api/system-stats", { headers: tokenHeader });
-        if (r.ok) {
-          const responseData = await r.json();
-          const statsData = responseData.data || responseData;
-          // Only use capacity utilization from backend, we'll calculate the rest
-          setStats({ totalCapacityUtilization: statsData.totalCapacityUtilization || 0 });
-          return;
-        }
-      } catch (error) {
-        console.error('Failed to fetch stats:', error);
-      }
-      setStats({ totalCapacityUtilization: 0 });
-    })();
+    // Stats are calculated from actual fetched data (pending orders, trucks, trains)
+    // No backend /api/system-stats endpoint needed
 
     // pending orders
     (async () => {
@@ -109,7 +93,7 @@ export default function Overview({ onGoAllocate }) {
         <div className="stat-card"><div className="icon">📋</div><div><h3>{pendingOrders.length}</h3><p>Pending Orders</p></div></div>
         <div className="stat-card"><div className="icon">🚛</div><div><h3>{resources.trucks}</h3><p>Available Trucks</p></div></div>
         <div className="stat-card"><div className="icon">🚂</div><div><h3>{resources.trains}</h3><p>Available Trains</p></div></div>
-        <div className="stat-card"><div className="icon">📊</div><div><h3>{stats.totalCapacityUtilization ?? 0}%</h3><p>Capacity Utilization</p></div></div>
+        <div className="stat-card"><div className="icon">👥</div><div><h3>{resources.drivers + resources.assistants}</h3><p>Total Employees</p></div></div>
       </div>
 
       <div className="mini-grid">

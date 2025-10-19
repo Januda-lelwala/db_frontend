@@ -112,6 +112,10 @@ export default function Trains() {
         body: JSON.stringify(trainPayload),
       });
       if (!r1.ok) throw new Error("Train create failed");
+      
+      // Extract train from response: {success: true, data: {...}}
+      const trainResponse = await r1.json();
+      const addedTrain = trainResponse.data || trainResponse || trainPayload;
 
       const r2 = await fetch("http://localhost:3000/api/train-routes", {
         method: "POST",
@@ -120,7 +124,7 @@ export default function Trains() {
       });
       if (!r2.ok) throw new Error("Route create failed");
 
-      setTrains((t) => [trainPayload, ...t]);
+      setTrains((t) => [addedTrain, ...t]);
       setForm({ train_id: "", capacity: "", notes: "" });
       setRoute({ route_id: "", start_city: "", end_city: "", destinations: "" });
       alert("Train + Route added");

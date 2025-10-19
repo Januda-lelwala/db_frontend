@@ -74,7 +74,9 @@ export default function Trucks() {
         body: JSON.stringify(payload),
       });
       if (!r.ok) throw new Error();
-      const added = await r.json().catch(() => payload);
+      const response = await r.json().catch(() => ({data: payload}));
+      // Handle backend response format: {success: true, data: {...}}
+      const added = response.data || response;
       setTrucks((t) => [added, ...t]);
     } catch {
       setTrucks((t) => [payload, ...t]); // demo fallback

@@ -39,6 +39,13 @@ export default function CheckoutReview() {
     try {
       setProcessing(true);
       setError(null);
+      
+      // Verify authentication token exists
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        throw new Error('Session expired. Please login again.');
+      }
+      
       if (!destinationCity.trim() || !destinationAddress.trim()) {
         throw new Error('Please enter destination city and address');
       }
@@ -50,7 +57,14 @@ export default function CheckoutReview() {
         if (!p) throw new Error('One or more cart items are invalid');
         return { product_id: p.product_id ?? p.id, quantity: ci.qty, price: Number(p.price) || 0 };
       });
-      await ordersAPI.create({ destination_city: destinationCity, destination_address: destinationAddress, items: itemsPayload });
+      
+      const orderPayload = { 
+        destination_city: destinationCity, 
+        destination_address: destinationAddress, 
+        items: itemsPayload 
+      };
+      
+      await ordersAPI.create(orderPayload);
       setOrderSuccess(true);
       clearCart();
       setTimeout(() => {

@@ -1,13 +1,18 @@
 import React, { useEffect, useState } from "react";
 import "./overview.css";
 
-const tokenHeader = { Authorization: `Bearer ${localStorage.getItem("authToken")}` };
-
 export default function Overview({ onGoAllocate }) {
   const [pendingOrders, setPendingOrders] = useState([]);
   const [resources, setResources] = useState({ drivers: 0, assistants: 0, trucks: 0, trains: 0 });
 
   useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    const tokenHeader = { Authorization: `Bearer ${token}` };
+
+    if (!token) {
+      console.warn('No auth token found, skipping data fetch');
+      return;
+    }
     // Helper function to extract array from various response formats
     const extractArray = (data, key) => {
       if (Array.isArray(data)) return data;
@@ -85,7 +90,7 @@ export default function Overview({ onGoAllocate }) {
         setResources({ drivers: 0, assistants: 0, trucks: 0, trains: 0 });
       }
     })();
-  }, []);
+  }, []); // Runs on mount - component remounts when admin logs in via key prop
 
   return (
     <div className="overview">

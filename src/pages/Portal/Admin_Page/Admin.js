@@ -53,13 +53,13 @@ export default function AdminDashboard() {
         </aside>
 
         <section className="main-content">
-          {view === "overview" && <Overview onGoAllocate={() => setView("train-allocation")} />}
+          {view === "overview" && <Overview key={user?.id || 'overview'} onGoAllocate={() => setView("train-allocation")} />}
           {view === "products" && <Products />}
           {view === "employees" && <Employees />}
           {view === "trucks" && <Trucks />}
           {view === "trains" && <Trains />}
-          {view === "train-allocation" && <TrainAllocation onGoTruckAssignment={() => setView("truck-assignment")} />}
-          {view === "truck-assignment" && <TruckAssignment />}
+          {view === "train-allocation" && <TrainAllocation key={user?.id || 'train-allocation'} onGoTruckAssignment={() => setView("truck-assignment")} />}
+          {view === "truck-assignment" && <TruckAssignment key={user?.id || 'truck-assignment'} />}
           {view === "reports" && <Reports />}
         </section>
       </main>

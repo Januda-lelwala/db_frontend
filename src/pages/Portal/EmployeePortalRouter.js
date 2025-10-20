@@ -11,7 +11,7 @@ import EmployeeSettings from './EmployeeSettings';
 
 
 const EmployeePortalRouter = () => {
-  const { isEmployee, isAdmin, isDriver, isAssistant } = useAuth();
+  const { user, isEmployee, isAdmin, isDriver, isAssistant } = useAuth();
 
   // Redirect non-employees to the employee login to avoid redirect loops
   if (!isEmployee) {
@@ -19,9 +19,9 @@ const EmployeePortalRouter = () => {
   }
 
   const getDashboardComponent = () => {
-    if (isAdmin) return <Admin />;
-    if (isDriver) return <DriverDashboard />;
-    if (isAssistant) return <AssistantDashboard />;
+    if (isAdmin) return <Admin key={user?.id || 'admin'} />;
+    if (isDriver) return <DriverDashboard key={user?.id || 'driver'} />;
+    if (isAssistant) return <AssistantDashboard key={user?.id || 'assistant'} />;
     return <Navigate to="/login" replace />;
   };
 
@@ -43,16 +43,16 @@ const EmployeePortalRouter = () => {
         {/* Driver-specific routes */}
         {isDriver && (
           <>
-            <Route path="/driver" element={<DriverDashboard />} />
-            <Route path="/driver/routes" element={<DriverDashboard />} />
+            <Route path="/driver" element={<DriverDashboard key={user?.id || 'driver'} />} />
+            <Route path="/driver/routes" element={<DriverDashboard key={user?.id || 'driver'} />} />
           </>
         )}
         
         {/* Assistant-specific routes */}
         {isAssistant && (
           <>
-            <Route path="/assistant" element={<AssistantDashboard />} />
-            <Route path="/assistant/support" element={<AssistantDashboard />} />
+            <Route path="/assistant" element={<AssistantDashboard key={user?.id || 'assistant'} />} />
+            <Route path="/assistant/support" element={<AssistantDashboard key={user?.id || 'assistant'} />} />
           </>
         )}
         

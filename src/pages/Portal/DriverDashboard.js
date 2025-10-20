@@ -25,115 +25,101 @@ const DriverDashboard = () => {
   const [currentRoute, setCurrentRoute] = useState(null);
   const [isOnline, setIsOnline] = useState(true);
   const [deliveryStatus, setDeliveryStatus] = useState('available'); // 'available' | 'on-route' | 'break'
-  const [notifications, setNotifications] = useState([
-    { id: 1, type: 'info', message: 'New delivery assigned to you', timestamp: '5 min ago' },
-    { id: 2, type: 'success', message: 'Payment received for DEL001', timestamp: '20 min ago' },
-    { id: 3, type: 'warning', message: 'Traffic alert on Galle Road', timestamp: '1 hour ago' },
-  ]);
+  const [notifications, setNotifications] = useState([]);
 
-  // Fetch helpers with safe fallbacks
+  // Fetch driver assignments from backend
   const fetchDriverAssignments = async () => {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      console.warn('No auth token found for driver assignments');
+      setAssignments([]);
+      return;
+    }
+
     try {
       setIsLoading(true);
       const response = await fetch('http://localhost:3000/api/portal/driver/assignments', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` },
+        headers: { Authorization: `Bearer ${token}` },
       });
+      
       if (response.ok) {
         const data = await response.json();
-        setAssignments(Array.isArray(data) ? data : []);
-        return;
+        // Handle various response formats
+        let assignmentsArray = [];
+        
+        if (Array.isArray(data)) {
+          assignmentsArray = data;
+        } else if (data.data) {
+          assignmentsArray = Array.isArray(data.data) ? data.data : [];
+        } else if (data.assignments) {
+          assignmentsArray = Array.isArray(data.assignments) ? data.assignments : [];
+        }
+        
+        console.log('✅ Loaded', assignmentsArray.length, 'driver assignments');
+        setAssignments(assignmentsArray);
+      } else {
+        console.error('Failed to fetch assignments:', response.status);
+        setAssignments([]);
       }
-    } catch (_) {
-      // ignore and use fallback
+    } catch (error) {
+      console.error('Error fetching driver assignments:', error);
+      setAssignments([]);
     } finally {
       setIsLoading(false);
     }
-
-    const sampleAssignments = [
-      {
-        id: 'DEL001',
-        customerName: 'John Smith',
-        customerPhone: '+94771234567',
-        address: '123 Main St, Colombo 03',
-        orderValue: 25000,
-        priority: 'urgent',
-        estimatedTime: '30 min',
-        distance: '5.2 km',
-        status: 'pending',
-        items: 3,
-        paymentMethod: 'Cash',
-        pickupTime: '2:30 PM',
-        deliveryWindow: '3:00 PM - 4:00 PM',
-      },
-      {
-        id: 'DEL002',
-        customerName: 'Jane Doe',
-        customerPhone: '+94719876543',
-        address: '456 Galle Rd, Mount Lavinia',
-        orderValue: 15000,
-        priority: 'high',
-        estimatedTime: '25 min',
-        distance: '8.1 km',
-        status: 'in-progress',
-        items: 2,
-        paymentMethod: 'Card',
-        pickupTime: '1:45 PM',
-        deliveryWindow: '2:30 PM - 3:30 PM',
-      },
-      {
-        id: 'DEL003',
-        customerName: 'Bob Wilson',
-        customerPhone: '+94765550123',
-        address: '789 Kandy Rd, Maharagama',
-        orderValue: 8500,
-        priority: 'medium',
-        estimatedTime: '20 min',
-        distance: '3.7 km',
-        status: 'pending',
-        items: 1,
-        paymentMethod: 'Cash',
-        pickupTime: '4:00 PM',
-        deliveryWindow: '4:30 PM - 5:30 PM',
-      },
-    ];
-    setAssignments(sampleAssignments);
   };
 
   const fetchDriverStats = async () => {
-    try {
-      const response = await fetch('http://localhost:3000/api/portal/driver/stats', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setDriverStats({
-          totalDeliveries: Number(data.totalDeliveries || 0),
-          completedToday: Number(data.completedToday || 0),
-          pendingDeliveries: Number(data.pendingDeliveries || 0),
-          rating: Number(data.rating || 0),
-          earnings: Number(data.earnings || 0),
-          hoursWorked: Number(data.hoursWorked || 0),
-        });
-        return;
-      }
-    } catch (_) {
-      // ignore and use fallback
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      console.warn('No auth token found for driver stats');
+      return;
     }
 
-    setDriverStats({
-      totalDeliveries: 127,
-      completedToday: 8,
-      pendingDeliveries: 3,
-      rating: 4.8,
-      earnings: 12500,
-      hoursWorked: 6.5,
-    });
+    try {
+      const response = await fetch('http://localhost:3000/api/portal/driver/stats', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        // Handle various response formats
+        const statsData = data.data || data;
+        
+        setDriverStats({
+          totalDeliveries: Number(statsData.totalDeliveries || 0),
+          completedToday: Number(statsData.completedToday || 0),
+          pendingDeliveries: Number(statsData.pendingDeliveries || 0),
+          rating: Number(statsData.rating || 0),
+          earnings: Number(statsData.earnings || 0),
+          hoursWorked: Number(statsData.hoursWorked || 0),
+        });
+        console.log('✅ Loaded driver stats');
+      } else {
+        console.error('Failed to fetch driver stats:', response.status);
+      }
+    } catch (error) {
+      console.error('Error fetching driver stats:', error);
+    }
   };
 
   useEffect(() => {
+    // Fetch initial data
     fetchDriverAssignments();
     fetchDriverStats();
-  }, []);
+
+    // Set up auto-refresh every 30 seconds when online
+    const refreshInterval = setInterval(() => {
+      if (isOnline) {
+        console.log('🔄 Auto-refreshing driver data...');
+        fetchDriverAssignments();
+        fetchDriverStats();
+      }
+    }, 30000); // 30 seconds
+
+    // Cleanup interval on unmount
+    return () => clearInterval(refreshInterval);
+  }, [isOnline]);
 
   // Actions
   const showNotification = (message, type = 'info') => {
@@ -142,35 +128,50 @@ const DriverDashboard = () => {
   };
 
   const updateDeliveryStatus = async (assignmentId, newStatus) => {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      showNotification('Authentication required', 'warning');
+      return;
+    }
+
     try {
       const response = await fetch('http://localhost:3000/api/portal/driver/update-status', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('authToken')}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ assignmentId, status: newStatus }),
       });
 
-      if (!response.ok) throw new Error('fallback');
-      showNotification('Status updated successfully!', 'success');
-    } catch (_) {
-      // Fallback behavior
-      showNotification('Status updated! (Demo mode)', 'success');
-    }
+      if (response.ok) {
+        showNotification('Status updated successfully!', 'success');
+        
+        // Update local state
+        setAssignments(prev =>
+          prev.map(a => (a.id === assignmentId ? { ...a, status: newStatus } : a))
+        );
 
-    setAssignments(prev =>
-      prev.map(a => (a.id === assignmentId ? { ...a, status: newStatus } : a))
-    );
-
-    if (newStatus === 'completed') {
-      setCurrentRoute(null);
-      setDeliveryStatus('available');
-      setDriverStats(prev => ({
-        ...prev,
-        completedToday: prev.completedToday + 1,
-        pendingDeliveries: Math.max(0, prev.pendingDeliveries - 1),
-      }));
+        if (newStatus === 'completed') {
+          setCurrentRoute(null);
+          setDeliveryStatus('available');
+          setDriverStats(prev => ({
+            ...prev,
+            completedToday: prev.completedToday + 1,
+            pendingDeliveries: Math.max(0, prev.pendingDeliveries - 1),
+          }));
+        }
+        
+        // Refresh data to get updated stats
+        fetchDriverStats();
+        fetchDriverAssignments();
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        showNotification(errorData.message || 'Failed to update status', 'warning');
+      }
+    } catch (error) {
+      console.error('Error updating delivery status:', error);
+      showNotification('Failed to update status. Please try again.', 'warning');
     }
   };
 
@@ -258,8 +259,8 @@ const DriverDashboard = () => {
 
   const renderQuickActions = () => (
     <div className="quick-actions">
-      <button className="action-btn primary" onClick={() => fetchDriverAssignments()} disabled={isLoading}>
-        {isLoading ? 'Refreshing…' : 'Refresh Assignments'}
+      <button className="action-btn primary" onClick={() => { fetchDriverAssignments(); fetchDriverStats(); }} disabled={isLoading}>
+        {isLoading ? '🔄 Refreshing…' : '🔄 Refresh Now'}
       </button>
       <button className="action-btn" onClick={reportIssue}>Report Issue</button>
       <button className="action-btn" onClick={openSupport}>Contact Support</button>
